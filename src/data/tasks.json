@@ -1,0 +1,33 @@
+[
+  {
+    "id": 0,
+    "title": "Planned Task #1",
+    "stage": "Planning",
+    "description": "I wish emmet's lorem shortcut worked in JSON"
+  },
+  {
+    "id": 1,
+    "title": "Planned Task #2",
+    "stage": "Planning",
+    "description": "Then I wouldn't have to spend any time typing this"
+  },
+  {
+    "id": 2,
+    "title": "Ongoing Task #1",
+    "stage": "Ongoing",
+    "description": "What a world that would be"
+  },
+  {
+    "id": 3,
+    "title": "Completed Task #1",
+    "stage": "Completed",
+    "description": "This should be in the completed section",
+    "completedDate": "2022-07-11T01:31:46.138Z"
+  },
+  {
+    "id": 4,
+    "title": "Planned Task #3",
+    "stage": "Planning",
+    "description": "This should be in the planning section"
+  }
+]
