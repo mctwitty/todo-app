@@ -2,13 +2,18 @@
   <section class="hero is-primary">
     <div class="hero-body">
       <p class="heading is-size-3">
-        The TODO App
+        The Vue TODO App
       </p>
     </div>
   </section>
   <section id="actions" class="buttons is-centered">
     <div class="button is-primary" @click="toggleNewModal">Create New Task</div>
-    <DevMode v-if="devMode" @test-event="loadTaskFromLS"/>
+    <DevMode v-if="devMode"
+      @test-event="loadAllTasksFromLS"
+      @push-all-to-ls="pushAllTasksToLocalStorage"
+      @load-sample-tasks="loadSampleTasks"
+      @clear-all-tasks="clearAllTasks"
+    />
   </section>
   <div class="container">
     <div class="columns is-variable is-1">
@@ -17,14 +22,15 @@
       <TaskColumn column-header="Completed Today" :tasks="completedToday" @modifyTask="modifyTask" @editTask="editTask"/>
     </div>
   </div>
-  <NewTaskModal :showNewModal="showNewModal" :numberOfTasks="totalTasks" @toggleNewModal="toggleNewModal" @create-new-task="createNewTask"/>
+  <NewTaskModal :showNewModal="showNewModal" :nextTaskId="nextTaskId" @toggle-new-modal="toggleNewModal" @create-new-task="createNewTask"/>
 </template>
 
 <script>
 import TaskColumn from './components/TaskColumn.vue'
 import NewTaskModal from './components/NewTaskModal.vue'
+
 import DevMode from './components/DevMode.vue'
-import tasks from './data/tasks.json'
+import sampleTasks from './data/tasks.json'
 
 // helper functions
 function getNextStage(currentStage) {
@@ -36,19 +42,42 @@ function getNextStage(currentStage) {
   }
   return nextStage
 }
-// devMode functions 
 function pushTaskToLocalStorage(task) {
   localStorage.setItem(task.id.toString(), JSON.stringify(task))
 }
-function loadAllTasksToLocalStorage() {
+
+// devMode functions 
+function loadSampleTasks() {
+  this.tasks = sampleTasks
+}
+function pushAllTasksToLocalStorage() {
   for(let i = 0; i < this.tasks.length; i++) {
     let task = this.tasks[i]
     localStorage.setItem(task.id.toString(), JSON.stringify(task))
   }
 }
 function loadTaskFromLS(id) {
+  // unnecessary to load a single task?
   let task = localStorage.getItem(id.toString())
   console.log(JSON.parse(task))
+}
+function loadAllTasksFromLS() {
+  // functionality moved to run on mount
+  let storedTasks = Object.keys(localStorage)
+  for(let i = 0; i < storedTasks.length; i++) {
+    if(storedTasks[i] != "config") {
+      this.tasks.push(JSON.parse(localStorage.getItem(storedTasks[i])))
+    }
+  }
+}
+function clearAllTasks() {
+  // clear all task, leave config
+  Object.keys(localStorage).forEach(key => {
+    if(key != "config") {
+      localStorage.removeItem(key)
+    }
+  })
+  this.tasks = []
 }
 export default {
   name: 'App',
@@ -58,25 +87,26 @@ export default {
       tasks: [],
       refreshKey: 0,
       showNewModal: false,
-      showEditModal: false
+      showEditModal: false,
+      config: {},
+      nextTaskId: 0
     }
   },
   methods: {
     modifyTask(id, action) {
-      let index = tasks.findIndex((task) => task.id == id)
+      let index = this.tasks.findIndex((task) => task.id == id)
 
       if(action == 'promote') {
-        let stage = tasks[index].stage
+        let stage = this.tasks[index].stage
         let nextStage = getNextStage(stage)
-        tasks[index].stage = nextStage
+        this.tasks[index].stage = nextStage
         if(nextStage == "Completed") {
-          tasks[index].completedDate = (new Date).toJSON()
+          this.tasks[index].completedDate = (new Date).toJSON()
         }
       } else if(action == 'delete') {
-        tasks[index].stage = "Deleted"
-      } else if(action == 'edit') {
-        this.showEditModal = true
+        this.tasks[index].stage = "Deleted"
       }
+      pushTaskToLocalStorage(this.tasks[index])
       this.refreshKey++
     },
     toggleNewModal() {
@@ -84,16 +114,22 @@ export default {
     },
     createNewTask(task) {
       this.tasks.push(task)
+      pushTaskToLocalStorage(task)
+      this.nextTaskId++
     },
     editTask(task) {
-      let index = tasks.findIndex((t) => t.id == task.id)
-      tasks[index].title = task.title
-      tasks[index].description = task.description
+      let index = this.tasks.findIndex((t) => t.id == task.id)
+      this.tasks[index].title = task.title
+      this.tasks[index].description = task.description
+      pushTaskToLocalStorage(this.tasks[index])
     },
-    // devMode functions
     pushTaskToLocalStorage,
-    loadAllTasksToLocalStorage,
-    loadTaskFromLS
+    // devMode functions
+    loadSampleTasks,
+    pushAllTasksToLocalStorage,
+    loadTaskFromLS,
+    loadAllTasksFromLS,
+    clearAllTasks
   },
   computed: {
     plannedTasks() {
@@ -123,7 +159,25 @@ export default {
     DevMode
   },
   mounted() {
-    if(this.devMode) this.tasks = tasks
+    // if(this.devMode) this.tasks = sampleTasks
+
+    // load config if it exists
+    if(!("config" in localStorage)) {
+      localStorage.setItem("config", JSON.stringify({ devMode: "false" }))
+    }
+    this.config = JSON.parse(localStorage.getItem("config"))
+    this.devMode = (this.config.devMode == "true")
+
+    // load tasks from local storage
+    let storedTasks = Object.keys(localStorage).filter(key => key != "config")
+    storedTasks.sort((a, b) => Number(a) - Number(b))
+    for(let i = 0; i < storedTasks.length; i++) {
+      this.tasks.push(JSON.parse(localStorage.getItem(storedTasks[i])))
+    }
+    // calculate next id
+    if(this.tasks.length > 0) {
+      this.nextTaskId = Math.max.apply(null, this.tasks.map(task => Number(task.id))) + 1
+    }
   },
 }
 </script>

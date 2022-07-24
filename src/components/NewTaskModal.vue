@@ -1,6 +1,6 @@
 <template>
   <div class="modal" :class="{ 'is-active': showNewModal}">
-    <div class="modal-background"></div>
+    <div class="modal-background" @click="reset"></div>
     <div class="modal-card">
       <header class="modal-card-head">
         <p class="modal-card-title">Create New Task</p>
@@ -19,11 +19,18 @@
             <textarea class="textarea" v-model="description"></textarea>
           </div>
         </div>
-        <div>
+        <div class="buttons is-right">
           <button class="button is-success" @click.prevent="createNewTask">Create</button>
         </div>
       </section>
+      <footer class="modal-card-footer"></footer>
     </div>
+    <div class="notificationCenter">
+      <div v-for="n in notifications" :key="n.id" class="notification is-success has-text-left">
+        <button class="delete" @click="removeNotification(n.id)"></button>
+        <p>Created: {{ n.title }}</p>
+      </div>
+    </div> 
   </div>
 </template>
 
@@ -33,14 +40,16 @@
     data() {
       return {
         title: '',
-        description: ''
+        description: '',
+        notifications: []
       }
     },
-    props: ['showNewModal', 'numberOfTasks'],
+    props: ['showNewModal', 'nextTaskId'],
     methods: {
       reset() {
         this.title = ''
         this.description = ''
+        this.notifications = []
         this.$emit('toggleNewModal')
       },
       createNewTask() {
@@ -48,12 +57,34 @@
         let description = this.description
         let stage = "Planning"
         let createdDate = new Date()
-        let id = this.numberOfTasks
+        let id = this.nextTaskId
         this.$emit('createNewTask', { id, title, description, stage, createdDate })
+        this.addNotification(this.title)
         this.title = ""
         this.description = ""
+      },
+      addNotification(title) {
+        let id = Date.now()
+        this.notifications.push({ id, title })
+      },
+      removeNotification(id) {
+        this.notifications = this.notifications.filter(n => n.id != id)
       }
     },
     emits: ['toggleNewModal', 'createNewTask']
   }
 </script>
+
+<style scoped>
+.notificationCenter {
+  position: absolute;
+  top: 1em;
+  right: 1em;
+  width:  350px;
+}
+.notification {
+  width: 100%;
+  white-space: nowrap;
+  overflow: scroll;
+}
+</style>
