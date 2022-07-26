@@ -9,11 +9,13 @@
 [x] Better Id generation
 [ ] settings object
 [x] sort on load
-[ ] export
+[x] export
 [ ] import
+  [ ] data verification
 [ ] templates
 [ ] due date
-[ ] bulma extensions
-[ ] refactor
+[x] bulma extensions
 [ ] hotkeys
 [ ] old task pruning
+[x] advanced mode toggle
+[ ] async emits
