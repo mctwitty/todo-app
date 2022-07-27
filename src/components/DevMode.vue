@@ -1,10 +1,12 @@
 <template>
-  <span>
+  <section class="buttons is-centered">
+    <p>DevMode functions:</p>
     <button class="button" @click="testAction">Test</button>
     <button class="button" @click="loadSamples">loadSamples</button>
     <button class="button" @click="pushAllToLs">pushAll</button>
     <button class="button" @click="clearAllTasks">clearAll</button>
-  </span>
+    <button class="button" @click="exportBackup">export</button>
+  </section>
 </template>
 
 <script>
@@ -22,8 +24,11 @@ export default {
     },
     clearAllTasks() {
       this.$emit("clearAllTasks")
+    },
+    exportBackup() {
+      this.$emit("exportBackup")
     }
   },
-  emits: ["testEvent", "pushAllToLs", "loadSampleTasks", "clearAllTasks"]
+  emits: ["testEvent", "pushAllToLs", "loadSampleTasks", "clearAllTasks", "exportBackup"]
 }
 </script>

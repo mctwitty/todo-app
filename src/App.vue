@@ -6,15 +6,38 @@
       </p>
     </div>
   </section>
-  <section id="actions" class="buttons is-centered">
-    <div class="button is-primary" @click="toggleNewModal">Create New Task</div>
-    <DevMode v-if="devMode"
-      @test-event="loadAllTasksFromLS"
-      @push-all-to-ls="pushAllTasksToLocalStorage"
-      @load-sample-tasks="loadSampleTasks"
-      @clear-all-tasks="clearAllTasks"
-    />
+  <section id="actions">
+    <div class="buttons is-centered">
+      <div class="button is-primary" @click="toggleNewModal">Create New Task</div>
+      <div>
+        <input id="advancedOptions" type="checkbox" class="switch is-rounded" v-model="advancedOptions">
+        <label for="advancedOptions">Advanced Options</label>
+      </div>
+    </div>
+    <div id="advanced" class="buttons is-centered" v-show="advancedOptions">
+      <button class="button" @click="exportBackup">Create Backup</button>
+      <div class="file">
+        <label class="file-label">
+          <input class="file-input" type="file" accept="text/json" ref="fileImport" @change="importJSON">
+          <span class="file-cta">
+            <span class="file-icon">
+              <font-awesome-icon :icon="['fa-solid', 'fa-upload']" />
+            </span>
+            <span class="file-label">
+              Import Backup
+            </span>
+          </span>
+        </label>
+      </div>
+    </div>
   </section>
+  <DevMode id="devMode" v-if="devMode"
+    @test-event="loadAllTasksFromLS"
+    @push-all-to-ls="pushAllTasksToLocalStorage"
+    @load-sample-tasks="loadSampleTasks"
+    @clear-all-tasks="clearAllTasks"
+    @export-backup="exportBackup"
+  />
   <div class="container">
     <div class="columns is-variable is-1">
       <TaskColumn column-header="Planning" :tasks="plannedTasks" @modifyTask="modifyTask" @editTask="editTask"/>
@@ -84,6 +107,7 @@ export default {
   data() {
     return {
       devMode: true,
+      advancedOptions: false,
       tasks: [],
       refreshKey: 0,
       showNewModal: false,
@@ -123,12 +147,40 @@ export default {
       this.tasks[index].description = task.description
       pushTaskToLocalStorage(this.tasks[index])
     },
+    exportBackup() {
+      const file = new Blob([JSON.stringify(this.tasks)], { type: 'text/json' })
+      let link = document.createElement("a")
+      link.download = "task" + Date.now() + ".json"
+      link.href = window.URL.createObjectURL(file)
+      link.dataset.downloadurl = ["text/json", link.download, link.href].join(":")
+      link.click()
+      link.remove()
+    },
+    importJSON() {
+      // this input doesn't allow multiple files
+      const file = this.$refs["fileImport"].files[0]
+      if(file) {
+        file.text().then(data => {
+          let importedTasks = JSON.parse(data)
+          // TODO: validate importedTasks
+
+          // clear old tasks from local storage
+          Object.keys(localStorage)
+            .filter(key => key != "config")
+            .forEach(key => localStorage.removeItem(key))
+          // set imported tasks
+          this.tasks = importedTasks
+          // push imported tasks to localStorage
+          importedTasks.forEach(task => localStorage.setItem(task.id.toString(), JSON.stringify(task)))
+        })
+      }
+    },
     pushTaskToLocalStorage,
     // devMode functions
     loadSampleTasks,
-    pushAllTasksToLocalStorage,
     loadTaskFromLS,
     loadAllTasksFromLS,
+    pushAllTasksToLocalStorage,
     clearAllTasks
   },
   computed: {
@@ -159,8 +211,6 @@ export default {
     DevMode
   },
   mounted() {
-    // if(this.devMode) this.tasks = sampleTasks
-
     // load config if it exists
     if(!("config" in localStorage)) {
       localStorage.setItem("config", JSON.stringify({ devMode: "false" }))
@@ -189,12 +239,14 @@ export default {
   -moz-osx-font-smoothing: grayscale;
   text-align: center;
   color: #2c3e50;
-  // margin-top: 60px;
 }
 .hero {
   margin-bottom: 20px;
 }
 #actions {
   margin: 20px;
+}
+#actions .button, #devMode .button {
+  margin-bottom: 0px;
 }
 </style>
