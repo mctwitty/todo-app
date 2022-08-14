@@ -113,7 +113,7 @@ export default {
       showNewModal: false,
       showEditModal: false,
       config: {},
-      nextTaskId: 0
+      nextTaskId: 0,
     }
   },
   methods: {
@@ -213,12 +213,12 @@ export default {
   mounted() {
     // load config if it exists
     if(!("config" in localStorage)) {
-      localStorage.setItem("config", JSON.stringify({ devMode: "false" }))
+      localStorage.setItem("config", "")
     }
     this.config = JSON.parse(localStorage.getItem("config"))
-    this.devMode = (this.config.devMode == "true")
+    this.devMode = (process.env.NODE_ENV === "development")
 
-    // load tasks from local storage
+    // load tasks from local storage, filtering out config object
     let storedTasks = Object.keys(localStorage).filter(key => key != "config")
     storedTasks.sort((a, b) => Number(a) - Number(b))
     for(let i = 0; i < storedTasks.length; i++) {
